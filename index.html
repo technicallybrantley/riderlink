@@ -12,11 +12,8 @@
   /* Rider Card button */
   .fab { position:fixed; top:10px; right:10px; z-index:900; background:#15171c; border:1px solid #1f2937; color:#e5e7eb; padding:8px 12px; border-radius:10px; cursor:pointer; display:flex; gap:8px; align-items:center; }
   .fab:hover { background:#1a1f2b; }
-  /* Shift left when chat is open so it never overlaps the chat close button */
   .fab.shifted { right: calc(10px + 420px); }
-  @media (max-width: 640px) {
-    .fab.shifted { right: calc(10px + 92vw); }
-  }
+  @media (max-width: 640px) { .fab.shifted { right: calc(10px + 92vw); } }
 
   /* Rider Card modal */
   .modal { position:fixed; inset:0; display:flex; align-items:center; justify-content:center; background:rgba(0,0,0,.55); z-index:1000; }
@@ -35,7 +32,7 @@
   /* Toast */
   .toast { position:fixed; left:50%; transform:translateX(-50%); top:12px; background:#15171c; border:1px solid #1f2937; color:#e5e7eb; padding:10px 14px; border-radius:10px; z-index:999; display:none; }
 
-  /* Status bubbles: glossy pill with emoji + text */
+  /* Status bubbles */
   .bubble {
     pointer-events:auto;
     background:linear-gradient(180deg,#ffffff,#f1f5f9);
@@ -68,11 +65,10 @@
   .msg.me { background:#1b5e20; margin-left:auto; }
   .msg.them { background:#263238; margin-right:auto; }
 
-  /* Popup tweaks */
   .leaflet-popup-content { margin:8px; }
   .muted { color:#9ca3af; font-size:13px; }
 
-  /* Small top bar hint when picking pin */
+  /* Pick-on-map hint */
   .pickbar { position:fixed; top:8px; left:50%; transform:translateX(-50%); background:#15171c; border:1px solid #1f2937; color:#e5e7eb; padding:6px 10px; border-radius:999px; z-index: 900; display:none; }
 </style>
 </head>
@@ -83,7 +79,7 @@
 <button id="riderCardBtn" class="fab">Rider Card</button>
 
 <!-- Pick hint -->
-<div class="pickbar" id="pickbar">Tap anywhere on the map to set your pin</div>
+<div class="pickbar" id="pickbar">Tap anywhere on the map to set your location</div>
 
 <!-- Rider Card modal -->
 <div class="modal" id="riderModal" role="dialog" aria-modal="true" style="display:none">
@@ -123,13 +119,13 @@
             <label style="margin-left:6px"><input type="radio" name="precision" value="exact"> Exact</label>
             <span class="hint" style="margin-left:8px">(Approx rounds to ~500 m grid)</span>
           </div>
-          <label><input type="radio" name="locmode" value="pinned"> Pinned location</label>
+
+          <label><input type="radio" name="locmode" value="pinned"> Manual location</label>
           <div id="pinOptions" style="display:none; gap:8px; flex-wrap:wrap; margin-left:20px">
             <button class="btn" id="pinPick">Pick on map</button>
-            <input type="number" step="any" id="pinLat" class="inp" placeholder="Lat">
-            <input type="number" step="any" id="pinLng" class="inp" placeholder="Lng">
-            <button class="btn" id="pinSave">Save pin</button>
+            <span class="hint">Click the map. Your pick will auto save.</span>
           </div>
+
           <label><input type="radio" name="locmode" value="hidden"> Hidden</label>
           <div class="hint" style="margin-left:20px">You will not appear on the map.</div>
         </div>
@@ -162,7 +158,7 @@
 /* Feature flags */
 const USE_SUPABASE = false;
 
-/* API stub - swap internals later when we connect Supabase */
+/* API stub */
 const api = (() => {
   if (!USE_SUPABASE) {
     return {
@@ -179,23 +175,11 @@ const api = (() => {
           bike: bikes[Math.floor(rnd()*bikes.length)]
         }));
       },
-      sendMessage: async (toId, body) => {
-        console.log('[fake sendMessage]', { toId, body });
-        return { ok:true };
-      },
-      upsertPresence: async ({ lat, lng, precision }) => {
-        console.log('[fake upsertPresence]', { lat, lng, precision });
-        return { ok:true };
-      }
+      sendMessage: async (toId, body) => { console.log('[fake sendMessage]', { toId, body }); return { ok:true }; },
+      upsertPresence: async ({ lat, lng, precision }) => { console.log('[fake upsertPresence]', { lat, lng, precision }); return { ok:true }; }
     };
   }
-
-  // placeholder for real Supabase wiring later
-  return {
-    listRidersAround: async ({ lat, lng }) => [],
-    sendMessage: async (toId, body) => ({ ok:false }),
-    upsertPresence: async ({ lat, lng, precision }) => ({ ok:false }),
-  };
+  return { listRidersAround: async()=>[], sendMessage: async()=>({ok:false}), upsertPresence: async()=>({ok:false}) };
 })();
 
 /* State */
@@ -206,7 +190,7 @@ const state = {
   precision: "approx",      // approx | exact, for live
   pinned: null,             // {lat,lng}
   liveWatchId: null,
-  anchor: null,             // lat/lng used to seed rider list (rounded in approx mode)
+  anchor: null,             // lat/lng used to seed rider list
   youMarker: null,
   homeMarker: null,
   riderAnchors: new Map(),
@@ -227,7 +211,7 @@ function mulberry32(a){ return function(){ let t=a+=0x6D2B79F5; t=Math.imul(t^t>
 /* Map */
 function initMap(){
   state.map = L.map('map', { zoomControl:true });
-  state.map.setView([20,0], 2); // safe initial view
+  state.map.setView([20,0], 2);
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution:'&copy; OpenStreetMap' }).addTo(state.map);
 }
 
@@ -238,8 +222,6 @@ function openCard(prefillOnly=false){
   document.getElementById('statusSel').value = state.profile.status || "Ready now";
   document.querySelectorAll('input[name="locmode"]').forEach(r => r.checked = (r.value === state.locMode));
   document.querySelectorAll('input[name="precision"]').forEach(r => r.checked = (r.value === state.precision));
-  document.getElementById('pinLat').value = state.pinned?.lat ?? "";
-  document.getElementById('pinLng').value = state.pinned?.lng ?? "";
   toggleLocOptions();
   if (!prefillOnly) {
     document.getElementById('riderModal').style.display = 'flex';
@@ -285,7 +267,7 @@ function applyLocationMode(firstRun=false){
 
   if (state.locMode === 'pinned') {
     if (!state.pinned) {
-      toast('Pick or enter a pin location first.');
+      toast('Click Pick on map to set a manual location.');
       openCard(true);
       return;
     }
@@ -298,7 +280,7 @@ function applyLocationMode(firstRun=false){
 
   // live
   if (!navigator.geolocation) {
-    toast('GPS not available. Switching to Pinned.');
+    toast('GPS not available. Switch to Manual location.');
     state.locMode = 'pinned';
     openCard(true);
     return;
@@ -311,14 +293,14 @@ function applyLocationMode(firstRun=false){
       if (state.precision === 'approx') anchor = roundApprox(lat, lng);
       state.anchor = anchor;
 
-      // show exact for your marker, anchor used for discovery
+      // exact for your own marker
       drawYouAt([lat, lng], false);
       if (firstRun) state.map.setView(anchor, 13);
 
       await api.upsertPresence({ lat: anchor[0], lng: anchor[1], precision: state.precision });
       seedAndDrawRiders();
     },
-    () => { toast('GPS failed. Try Pinned.'); },
+    () => { toast('GPS failed. Try Manual location.'); },
     { enableHighAccuracy: false, maximumAge: 5000, timeout: 8000 }
   );
 }
@@ -380,7 +362,6 @@ function clearRiders(){
   for (const m of state.riderBubbles.values()) { try { state.map.removeLayer(m); } catch {} }
   state.riderAnchors.clear(); state.riderBubbles.clear();
 }
-
 function dropMeetPin(lat,lng){
   const pin = L.marker([lat,lng]).addTo(state.map).bindTooltip('<span class="tag">Meet</span>', {permanent:true, direction:'top', offset:[0,-12]});
   state.meetPins.push(pin);
@@ -404,22 +385,29 @@ function addChatMsg(text, me=true){
   document.getElementById('chatBody').scrollTop = 1e9;
 }
 
-/* Pin interactions inside Rider Card */
+/* Manual location pick */
 function toggleLocOptions(){
   const mode = document.querySelector('input[name="locmode"]:checked')?.value;
   document.getElementById('liveOptions').style.display = mode === 'live' ? 'block' : 'none';
   document.getElementById('pinOptions').style.display  = mode === 'pinned' ? 'flex'  : 'none';
 }
 function startPickPin(){
+  // Hide card to allow map click, show hint
   document.getElementById('riderModal').style.display = 'none';
   showPickbar(true);
   state.pickingPin = true;
+
   const once = e => {
     if (!state.pickingPin) return;
     state.pickingPin = false;
     showPickbar(false);
+    // Auto save pin and switch to Manual location
     state.pinned = { lat:e.latlng.lat, lng:e.latlng.lng };
-    openCard(); // reopen with values filled
+    try { localStorage.setItem('pinned', JSON.stringify(state.pinned)); } catch {}
+    state.locMode = 'pinned';
+    try { localStorage.setItem('locMode', state.locMode); } catch {}
+    toast('Manual location saved');
+    applyLocationMode(true);
   };
   state.map.once('click', once);
 }
@@ -448,20 +436,12 @@ document.getElementById('chatSend').onclick = () => {
 };
 document.querySelectorAll('input[name="locmode"]').forEach(r => r.onchange = toggleLocOptions);
 document.getElementById('pinPick').onclick  = () => startPickPin();
-document.getElementById('pinSave').onclick  = () => {
-  const lat = parseFloat(document.getElementById('pinLat').value);
-  const lng = parseFloat(document.getElementById('pinLng').value);
-  if (Number.isFinite(lat) && Number.isFinite(lng)) { state.pinned = {lat,lng}; toast('Pin saved'); }
-  else toast('Enter valid lat and lng');
-};
 
 /* Boot */
 initMap();
 restore();
-openCard();         // first-run
-toggleLocOptions(); // ensure correct sub options visibility
-
-/* After saving card, location mode will load riders. For dev, if user closes card without saving, nothing loads yet. */
+openCard();
+toggleLocOptions();
 
 /* Minimal console tests */
 (function tests(){
