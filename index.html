@@ -9,6 +9,15 @@
   html, body { height:100%; margin:0; font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif; background:#0b0c10; color:#e5e7eb; }
   #map { height:100%; width:100%; }
 
+  /* Rider Card button */
+  .fab { position:fixed; top:10px; right:10px; z-index:900; background:#15171c; border:1px solid #1f2937; color:#e5e7eb; padding:8px 12px; border-radius:10px; cursor:pointer; display:flex; gap:8px; align-items:center; }
+  .fab:hover { background:#1a1f2b; }
+  /* Shift left when chat is open so it never overlaps the chat close button */
+  .fab.shifted { right: calc(10px + 420px); }
+  @media (max-width: 640px) {
+    .fab.shifted { right: calc(10px + 92vw); }
+  }
+
   /* Rider Card modal */
   .modal { position:fixed; inset:0; display:flex; align-items:center; justify-content:center; background:rgba(0,0,0,.55); z-index:1000; }
   .card { width:min(600px, 94vw); background:#15171c; border:1px solid #1f2937; border-radius:14px; box-shadow:0 20px 60px rgba(0,0,0,.45); }
@@ -22,10 +31,6 @@
   .btn.primary { background:#22c55e; border-color:#22c55e; color:#052914; font-weight:800; }
   .btn.ghost { background:transparent; }
   .footer { display:flex; justify-content:flex-end; gap:10px; padding:12px 16px; border-top:1px solid #1f2937; }
-
-  /* Top-right Rider Card button */
-  .fab { position:fixed; top:10px; right:10px; z-index:900; background:#15171c; border:1px solid #1f2937; color:#e5e7eb; padding:8px 12px; border-radius:10px; cursor:pointer; display:flex; gap:8px; align-items:center; }
-  .fab:hover { background:#1a1f2b; }
 
   /* Toast */
   .toast { position:fixed; left:50%; transform:translateX(-50%); top:12px; background:#15171c; border:1px solid #1f2937; color:#e5e7eb; padding:10px 14px; border-radius:10px; z-index:999; display:none; }
@@ -81,7 +86,7 @@
 <div class="pickbar" id="pickbar">Tap anywhere on the map to set your pin</div>
 
 <!-- Rider Card modal -->
-<div class="modal" id="riderModal" role="dialog" aria-modal="true">
+<div class="modal" id="riderModal" role="dialog" aria-modal="true" style="display:none">
   <div class="card">
     <header>
       <div>Rider Card</div>
@@ -119,7 +124,7 @@
             <span class="hint" style="margin-left:8px">(Approx rounds to ~500 m grid)</span>
           </div>
           <label><input type="radio" name="locmode" value="pinned"> Pinned location</label>
-          <div id="pinOptions" style="display:flex; gap:8px; flex-wrap:wrap; margin-left:20px">
+          <div id="pinOptions" style="display:none; gap:8px; flex-wrap:wrap; margin-left:20px">
             <button class="btn" id="pinPick">Pick on map</button>
             <input type="number" step="any" id="pinLat" class="inp" placeholder="Lat">
             <input type="number" step="any" id="pinLng" class="inp" placeholder="Lng">
@@ -154,6 +159,46 @@
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
+/* Feature flags */
+const USE_SUPABASE = false;
+
+/* API stub - swap internals later when we connect Supabase */
+const api = (() => {
+  if (!USE_SUPABASE) {
+    return {
+      listRidersAround: async ({ lat, lng }) => {
+        const rnd = mulberry32(Math.floor(lat*1e4) ^ Math.floor(lng*1e4));
+        const statuses = [['Ready now','✅'],['Coffee','☕'],['Fuel stop','⛽'],['Twisties','🌀'],['Chill loop','🧭'],['Lunch','🍔'],['Rain check','🌧']];
+        const bikes = ['ZX6R','MT-09','R7','GSX-S750','Panigale V2','CBR650R','Tiger 900','T7','Z900'];
+        return Array.from({length:10}).map((_,i)=>({
+          id:'r'+i,
+          name:'Rider '+(i+1),
+          lat: lat + (rnd()-0.5)*0.06,
+          lng: lng + (rnd()-0.5)*0.06,
+          status: statuses[Math.floor(rnd()*statuses.length)],
+          bike: bikes[Math.floor(rnd()*bikes.length)]
+        }));
+      },
+      sendMessage: async (toId, body) => {
+        console.log('[fake sendMessage]', { toId, body });
+        return { ok:true };
+      },
+      upsertPresence: async ({ lat, lng, precision }) => {
+        console.log('[fake upsertPresence]', { lat, lng, precision });
+        return { ok:true };
+      }
+    };
+  }
+
+  // placeholder for real Supabase wiring later
+  return {
+    listRidersAround: async ({ lat, lng }) => [],
+    sendMessage: async (toId, body) => ({ ok:false }),
+    upsertPresence: async ({ lat, lng, precision }) => ({ ok:false }),
+  };
+})();
+
+/* State */
 const state = {
   map: null,
   profile: { name: "", bike: "", status: "Ready now" },
@@ -161,7 +206,7 @@ const state = {
   precision: "approx",      // approx | exact, for live
   pinned: null,             // {lat,lng}
   liveWatchId: null,
-  anchor: null,             // {lat,lng} used to seed riders (rounded live or pinned)
+  anchor: null,             // lat/lng used to seed rider list (rounded in approx mode)
   youMarker: null,
   homeMarker: null,
   riderAnchors: new Map(),
@@ -170,18 +215,14 @@ const state = {
   pickingPin: false,
 };
 
+/* Utils */
 function toast(msg, ms=1800){ const t=document.getElementById('toast'); t.textContent=msg; t.style.display='block'; setTimeout(()=>t.style.display='none', ms); }
 function showPickbar(show){ document.getElementById('pickbar').style.display = show ? 'block' : 'none'; }
 function esc(s){ return String(s).replace(/[&<>"']/g, c=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c])); }
 function metersToDegLat(m){ return m/111320; }
 function metersToDegLng(m, lat){ return m/(111320*Math.cos(lat * Math.PI/180) || 1); }
-function roundApprox(lat,lng){ // ~500 m grid
-  const dLat = metersToDegLat(500);
-  const dLng = metersToDegLng(500, lat);
-  const rLat = Math.round(lat/dLat)*dLat;
-  const rLng = Math.round(lng/dLng)*dLng;
-  return [ +rLat.toFixed(6), +rLng.toFixed(6) ];
-}
+function roundApprox(lat,lng){ const dLat = metersToDegLat(500); const dLng = metersToDegLng(500, lat); const rLat = Math.round(lat/dLat)*dLat; const rLng = Math.round(lng/dLng)*dLng; return [ +rLat.toFixed(6), +rLng.toFixed(6) ]; }
+function mulberry32(a){ return function(){ let t=a+=0x6D2B79F5; t=Math.imul(t^t>>>15,t|1); t^=t+Math.imul(t^t>>>7,t|61); return ((t^t>>>14)>>>0)/4294967296; } }
 
 /* Map */
 function initMap(){
@@ -192,20 +233,14 @@ function initMap(){
 
 /* Rider Card open/close */
 function openCard(prefillOnly=false){
-  // Prefill from state/localStorage
   document.getElementById('nameInp').value = state.profile.name || "";
   document.getElementById('bikeInp').value = state.profile.bike || "";
   document.getElementById('statusSel').value = state.profile.status || "Ready now";
-
-  // Radio selects
   document.querySelectorAll('input[name="locmode"]').forEach(r => r.checked = (r.value === state.locMode));
   document.querySelectorAll('input[name="precision"]').forEach(r => r.checked = (r.value === state.precision));
   document.getElementById('pinLat').value = state.pinned?.lat ?? "";
   document.getElementById('pinLng').value = state.pinned?.lng ?? "";
-
-  // Show/hide sub options
   toggleLocOptions();
-
   if (!prefillOnly) {
     document.getElementById('riderModal').style.display = 'flex';
     setTimeout(()=> state.map.invalidateSize(), 50);
@@ -221,11 +256,9 @@ function saveCard(){
   state.profile.name = document.getElementById('nameInp').value.trim() || "Rider";
   state.profile.bike = document.getElementById('bikeInp').value.trim() || "Unknown";
   state.profile.status = document.getElementById('statusSel').value;
-  const mode = document.querySelector('input[name="locmode"]:checked')?.value || "live";
-  state.locMode = mode;
+  state.locMode = document.querySelector('input[name="locmode"]:checked')?.value || "live";
   state.precision = document.querySelector('input[name="precision"]:checked')?.value || "approx";
 
-  // Persist
   try {
     localStorage.setItem('profile', JSON.stringify(state.profile));
     localStorage.setItem('locMode', state.locMode);
@@ -233,17 +266,13 @@ function saveCard(){
     if (state.pinned) localStorage.setItem('pinned', JSON.stringify(state.pinned));
   } catch {}
 
-  // Apply mode
   applyLocationMode(true);
   closeCard();
 }
 
 /* Apply location mode */
 function applyLocationMode(firstRun=false){
-  // Stop any existing watcher
   if (state.liveWatchId != null) { navigator.geolocation.clearWatch(state.liveWatchId); state.liveWatchId = null; }
-
-  // Clear "you" visuals
   if (state.youMarker) { try { state.map.removeLayer(state.youMarker); } catch {} state.youMarker = null; }
   if (state.homeMarker) { try { state.map.removeLayer(state.homeMarker); } catch {} state.homeMarker = null; }
 
@@ -262,12 +291,12 @@ function applyLocationMode(firstRun=false){
     }
     state.anchor = [state.pinned.lat, state.pinned.lng];
     drawYouAt(state.anchor, true);
-    loadRidersNear(state.anchor);
     state.map.setView(state.anchor, 13);
+    seedAndDrawRiders();
     return;
   }
 
-  // live mode
+  // live
   if (!navigator.geolocation) {
     toast('GPS not available. Switching to Pinned.');
     state.locMode = 'pinned';
@@ -276,24 +305,25 @@ function applyLocationMode(firstRun=false){
   }
   toast('Sharing live location' + (state.precision === 'approx' ? ' (approx)' : ''));
   state.liveWatchId = navigator.geolocation.watchPosition(
-    pos => {
+    async pos => {
       let lat = pos.coords.latitude, lng = pos.coords.longitude;
       let anchor = [lat, lng];
       if (state.precision === 'approx') anchor = roundApprox(lat, lng);
       state.anchor = anchor;
 
-      drawYouAt([lat, lng], false); // show exact for you
+      // show exact for your marker, anchor used for discovery
+      drawYouAt([lat, lng], false);
       if (firstRun) state.map.setView(anchor, 13);
-      loadRidersNear(anchor);
+
+      await api.upsertPresence({ lat: anchor[0], lng: anchor[1], precision: state.precision });
+      seedAndDrawRiders();
     },
-    () => {
-      toast('GPS failed. Try Pinned.');
-    },
+    () => { toast('GPS failed. Try Pinned.'); },
     { enableHighAccuracy: false, maximumAge: 5000, timeout: 8000 }
   );
 }
 
-/* Draw "you" and Home icon */
+/* Draw "you" and optional Home tag */
 function drawYouAt(latlng, showHome){
   if (state.youMarker) { try { state.map.removeLayer(state.youMarker); } catch {} }
   state.youMarker = L.circleMarker(latlng, { radius:8, color:'#60a5fa', weight:3, fillColor:'#60a5fa', fillOpacity:0.6 }).addTo(state.map);
@@ -305,25 +335,15 @@ function drawYouAt(latlng, showHome){
   }
 }
 
-/* Riders around anchor */
-function loadRidersNear(anchor){
-  if (!anchor) { clearRiders(); return; }
+/* Riders via API */
+async function seedAndDrawRiders(){
+  if (!state.anchor) { clearRiders(); return; }
+  const [lat,lng] = state.anchor;
+  const riders = await api.listRidersAround({ lat, lng });
+  drawRiders(riders);
+}
+function drawRiders(riders){
   clearRiders();
-  const [lat, lng] = anchor;
-  const rnd = mulberry32(Math.floor(lat*1e4) ^ Math.floor(lng*1e4));
-  const statuses = [
-    ['Ready now','✅'],['Coffee','☕'],['Fuel stop','⛽'],['Twisties','🌀'],['Chill loop','🧭'],['Lunch','🍔'],['Rain check','🌧']
-  ];
-  const bikes = ['ZX6R','MT-09','R7','GSX-S750','Panigale V2','CBR650R','Tiger 900','T7','Z900'];
-  const riders = Array.from({length:10}).map((_,i)=>({
-    id: 'r'+i,
-    name: 'Rider '+(i+1),
-    lat: lat + (rnd()-0.5)*0.06,
-    lng: lng + (rnd()-0.5)*0.06,
-    status: statuses[Math.floor(rnd()*statuses.length)],
-    bike: bikes[Math.floor(rnd()*bikes.length)]
-  }));
-
   riders.forEach(r => {
     const anchorMarker = L.marker([r.lat, r.lng], { opacity:0 }).addTo(state.map);
     const html = `
@@ -355,7 +375,6 @@ function loadRidersNear(anchor){
     state.riderBubbles.set(r.id, bubble);
   });
 }
-
 function clearRiders(){
   for (const m of state.riderAnchors.values()) { try { state.map.removeLayer(m); } catch {} }
   for (const m of state.riderBubbles.values()) { try { state.map.removeLayer(m); } catch {} }
@@ -368,13 +387,14 @@ function dropMeetPin(lat,lng){
   setTimeout(()=>{ try { state.map.removeLayer(pin); } catch{} }, 60000);
 }
 
-/* Chat */
+/* Chat with FAB shift */
 function openChat(rider){
-  document.getElementById('chat').classList.add('open');
+  const chat = document.getElementById('chat');
+  chat.classList.add('open');
   document.getElementById('chatTitle').textContent = rider.name;
-  const body = document.getElementById('chatBody');
-  body.innerHTML = '';
+  document.getElementById('chatBody').innerHTML = '';
   addChatMsg(`Hey ${rider.name}, I am ${state.profile.name}.`, false);
+  document.getElementById('riderCardBtn').classList.add('shifted');
 }
 function addChatMsg(text, me=true){
   const div = document.createElement('div');
@@ -404,24 +424,6 @@ function startPickPin(){
   state.map.once('click', once);
 }
 
-/* UI wiring */
-document.getElementById('riderCardBtn').onclick = () => openCard();
-document.getElementById('closeCard').onclick = () => closeCard();
-document.getElementById('saveCard').onclick = () => saveCard();
-document.getElementById('chatClose').onclick = () => document.getElementById('chat').classList.remove('open');
-document.getElementById('chatSend').onclick = () => {
-  const inp = document.getElementById('chatInput'); const v = inp.value.trim();
-  if (!v) return; addChatMsg(v, true); inp.value='';
-};
-document.querySelectorAll('input[name="locmode"]').forEach(r => r.onchange = toggleLocOptions);
-document.getElementById('pinPick').onclick  = () => startPickPin();
-document.getElementById('pinSave').onclick  = () => {
-  const lat = parseFloat(document.getElementById('pinLat').value);
-  const lng = parseFloat(document.getElementById('pinLng').value);
-  if (Number.isFinite(lat) && Number.isFinite(lng)) { state.pinned = {lat,lng}; toast('Pin saved'); }
-  else toast('Enter valid lat and lng');
-};
-
 /* Restore from storage on boot */
 function restore(){
   try {
@@ -432,20 +434,40 @@ function restore(){
   } catch {}
 }
 
-/* Utils */
-function mulberry32(a){ return function(){ let t=a+=0x6D2B79F5; t=Math.imul(t^t>>>15,t|1); t^=t+Math.imul(t^t>>>7,t|61); return ((t^t>>>14)>>>0)/4294967296; } }
+/* UI wiring */
+document.getElementById('riderCardBtn').onclick = () => openCard();
+document.getElementById('closeCard').onclick = () => closeCard();
+document.getElementById('saveCard').onclick = () => saveCard();
+document.getElementById('chatClose').onclick = () => {
+  document.getElementById('chat').classList.remove('open');
+  document.getElementById('riderCardBtn').classList.remove('shifted');
+};
+document.getElementById('chatSend').onclick = () => {
+  const inp = document.getElementById('chatInput'); const v = inp.value.trim();
+  if (!v) return; addChatMsg(v, true); api.sendMessage('temp', v); inp.value='';
+};
+document.querySelectorAll('input[name="locmode"]').forEach(r => r.onchange = toggleLocOptions);
+document.getElementById('pinPick').onclick  = () => startPickPin();
+document.getElementById('pinSave').onclick  = () => {
+  const lat = parseFloat(document.getElementById('pinLat').value);
+  const lng = parseFloat(document.getElementById('pinLng').value);
+  if (Number.isFinite(lat) && Number.isFinite(lng)) { state.pinned = {lat,lng}; toast('Pin saved'); }
+  else toast('Enter valid lat and lng');
+};
 
 /* Boot */
 initMap();
 restore();
-// First run: open Rider Card immediately
-openCard();
+openCard();         // first-run
+toggleLocOptions(); // ensure correct sub options visibility
+
+/* After saving card, location mode will load riders. For dev, if user closes card without saving, nothing loads yet. */
 
 /* Minimal console tests */
 (function tests(){
   const log = (ok, name, err) => ok ? console.log('✅', name) : console.error('❌', name, err||'');
   try { const c = state.map.getCenter(); if (!Number.isFinite(c.lat)) throw 'no center'; log(true,'Map has initial center'); } catch(e){ log(false,'Map has initial center', e); }
-  try { openCard(true); log(true,'Rider Card opens with prefill'); } catch(e){ log(false,'Rider Card opens with prefill', e); }
+  try { document.getElementById('riderCardBtn'); log(true,'Rider Card button present'); } catch(e){ log(false,'Rider Card button present', e); }
 })();
 </script>
 </body>
