@@ -9,25 +9,19 @@
   html, body { height:100%; margin:0; font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif; background:#0b0c10; color:#e5e7eb; }
   #map { height:100%; width:100%; }
 
-  /* Rider Card button */
-  .fab { position:fixed; top:10px; right:10px; z-index:900; background:#15171c; border:1px solid #1f2937; color:#e5e7eb; padding:8px 12px; border-radius:10px; cursor:pointer; display:flex; gap:8px; align-items:center; }
+  /* Top right buttons */
+  .stack { position:fixed; top:10px; right:10px; display:flex; flex-direction:column; gap:8px; z-index:900; transition:margin-right .2s ease; }
+  .fab { background:#15171c; border:1px solid #1f2937; color:#e5e7eb; padding:8px 12px; border-radius:10px; cursor:pointer; display:flex; gap:8px; align-items:center; }
   .fab:hover { background:#1a1f2b; }
-  .fab.shifted { right: calc(10px + 420px); }
-  @media (max-width: 640px) { .fab.shifted { right: calc(10px + 92vw); } }
+  .shiftRight { margin-right:420px; }
+  @media (max-width: 640px) { .shiftRight { margin-right:92vw; } }
 
-  /* Bottom center control - glassy */
-  .dock {
-    position:fixed; left:50%; bottom:18px; transform:translateX(-50%);
-    display:flex; gap:12px; padding:10px; border-radius:16px; z-index:850;
-    background:rgba(22,24,30,.6); border:1px solid rgba(60,68,80,.5); backdrop-filter: saturate(140%) blur(10px);
-  }
-  .dock .dockbtn {
-    border:1px solid rgba(80,90,110,.7); background:rgba(35,40,50,.85);
-    color:#fff; padding:10px 14px; border-radius:12px; cursor:pointer; font-weight:700;
-  }
+  /* Bottom dock */
+  .dock { position:fixed; left:50%; bottom:18px; transform:translateX(-50%); display:flex; gap:12px; padding:10px; border-radius:16px; z-index:850; background:rgba(22,24,30,.6); border:1px solid rgba(60,68,80,.5); backdrop-filter:saturate(140%) blur(10px); }
+  .dock .dockbtn { border:1px solid rgba(80,90,110,.7); background:rgba(35,40,50,.85); color:#fff; padding:10px 14px; border-radius:12px; cursor:pointer; font-weight:700; }
   .dock .dockbtn.primary { background:#22c55e; border-color:#22c55e; color:#072c16; }
 
-  /* Rider Card modal */
+  /* Modals and cards */
   .modal { position:fixed; inset:0; display:flex; align-items:center; justify-content:center; background:rgba(0,0,0,.55); z-index:1000; }
   .card { width:min(640px, 94vw); background:#15171c; border:1px solid #1f2937; border-radius:14px; box-shadow:0 20px 60px rgba(0,0,0,.45); }
   .card header { padding:14px 16px; border-bottom:1px solid #1f2937; font-weight:800; display:flex; align-items:center; justify-content:space-between; }
@@ -48,12 +42,11 @@
   /* Toast */
   .toast { position:fixed; left:50%; transform:translateX(-50%); top:12px; background:#15171c; border:1px solid #1f2937; color:#e5e7eb; padding:10px 14px; border-radius:10px; z-index:999; display:none; }
 
-  /* Chat */
+  /* Chat drawer */
   #chat { position:fixed; right:0; top:0; bottom:0; width:min(420px, 92vw); transform:translateX(100%); transition:transform .2s ease; background:#0e0e0e; color:#fff; z-index:800; display:flex; flex-direction:column; border-left:1px solid #222; }
   #chat.open { transform:translateX(0%); }
   #chatHead { padding:10px 12px; border-bottom:1px solid #222; display:flex; align-items:center; justify-content:space-between; }
   #chatBody { flex:1; overflow:auto; padding:12px; display:flex; flex-direction:column; gap:8px; }
-  /* Sticky quick chips and confirm bar at bottom */
   #chatActions { padding:8px 12px; border-top:1px solid #222; display:flex; flex-direction:column; gap:8px; }
   #quickChips { display:flex; gap:6px; flex-wrap:wrap; justify-content:flex-start; }
   #confirmWrap { display:flex; align-items:center; justify-content:center; }
@@ -64,15 +57,23 @@
   .msg.me { background:#1b5e20; margin-left:auto; }
   .msg.them { background:#263238; margin-right:auto; }
 
-  .leaflet-popup-content { margin:8px; }
-  .muted { color:#9ca3af; font-size:13px; }
-
   /* Pick-on-map hint */
-  .pickbar { position:fixed; top:8px; left:50%; transform:translateX(-50%); background:#15171c; border:1px solid #1f2937; color:#e5e7eb; padding:6px 10px; border-radius:999px; z-index: 900; display:none; }
+  .pickbar { position:fixed; top:8px; left:50%; transform:translateX(-50%); background:#15171c; border:1px solid #1f2937; color:#e5e7eb; padding:6px 10px; border-radius:999px; z-index:900; display:none; }
 
-  /* Spotlight ring */
+  /* Spotlight */
   #spot { position:fixed; inset:0; pointer-events:none; display:none; z-index:700; }
-  #spot.show { display:block; }
+
+  /* Threads drawer */
+  #threads { position:fixed; right:0; top:0; bottom:0; width:min(320px, 88vw); transform:translateX(100%); transition:transform .2s ease; background:#101214; color:#e5e7eb; z-index:750; border-left:1px solid #222; display:flex; flex-direction:column; }
+  #threads.open { transform:translateX(0); }
+  #threads header { padding:10px 12px; border-bottom:1px solid #222; display:flex; align-items:center; justify-content:space-between; font-weight:800; }
+  #threadList { flex:1; overflow:auto; padding:10px; display:flex; flex-direction:column; gap:8px; }
+  .thread { border:1px solid #1f2937; border-radius:10px; padding:8px 10px; cursor:pointer; }
+  .thread small { color:#9ca3af; display:block; }
+
+  /* Helmet divIcon content */
+  .helm { transform: translate(-50%, -50%); }
+  .helmWrap { will-change: transform; }
 </style>
 </head>
 <body>
@@ -81,13 +82,17 @@
 <!-- Spotlight canvas -->
 <canvas id="spot"></canvas>
 
-<!-- Rider Card button -->
-<button id="riderCardBtn" class="fab">Rider Card</button>
+<!-- Top right buttons -->
+<div class="stack" id="stack">
+  <button id="riderCardBtn" class="fab">Rider Card</button>
+  <button id="chatsBtn" class="fab">Chats</button>
+</div>
 
 <!-- Bottom dock -->
 <div class="dock" id="dock">
-  <button class="dockbtn" id="groupRideBtn">Group Ride</button>
-  <button class="dockbtn primary" id="createMeetBtn">Create Meet</button>
+  <button class="dockbtn" id="groupRideBtn">Create Group Ride</button>
+  <button class="dockbtn primary" id="createMeetBtn">Create Meet Up</button>
+  <button class="dockbtn" id="exploreBtn">Explore</button>
 </div>
 
 <!-- Pick hint -->
@@ -155,7 +160,7 @@
   </div>
 </div>
 
-<!-- Create Meet bottom sheet -->
+<!-- Create Meet sheet -->
 <div class="modal" id="createMeetModal" style="display:none;">
   <div class="card" style="width:min(520px,92vw)">
     <header>
@@ -194,16 +199,47 @@
 <div class="modal" id="groupSheet" style="display:none;">
   <div class="card" style="width:min(520px,92vw)">
     <header>
-      <div>Group ride</div>
+      <div>Create group ride</div>
       <button class="btn ghost" id="closeGroup">Close</button>
     </header>
     <main>
-      <div id="groupList" class="row" style="flex-direction:column; align-items:stretch"></div>
+      <div class="row">
+        <div class="label">Title</div>
+        <input id="groupTitle" class="inp" placeholder="Saturday loop, City night ride, etc." />
+      </div>
       <div class="row" style="justify-content:flex-end">
-        <button class="btn primary" id="groupCheckIn">On my way</button>
+        <button class="btn primary" id="groupSave">Create</button>
       </div>
     </main>
   </div>
+</div>
+
+<!-- Explore sheet -->
+<div class="modal" id="exploreSheet" style="display:none;">
+  <div class="card" style="width:min(560px,94vw)">
+    <header>
+      <div>Explore</div>
+      <button class="btn ghost" id="closeExplore">Close</button>
+    </header>
+    <main>
+      <div class="row" style="justify-content:space-between; align-items:center">
+        <div class="hint">Browse current and upcoming meets</div>
+        <label class="hint" style="display:flex; align-items:center; gap:6px">
+          <input type="checkbox" id="exploreShowOnMap" /> Show on map
+        </label>
+      </div>
+      <div id="exploreList" class="row" style="flex-direction:column; align-items:stretch"></div>
+    </main>
+  </div>
+</div>
+
+<!-- Threads drawer -->
+<div id="threads">
+  <header>
+    <div>Chats</div>
+    <button class="btn" id="threadsClose">Close</button>
+  </header>
+  <div id="threadList"></div>
 </div>
 
 <!-- Toast -->
@@ -213,12 +249,11 @@
 <div id="chat">
   <div id="chatHead">
     <strong id="chatTitle"></strong>
-    <button id="chatClose">Close</button>
+    <button id="chatClose" class="btn">Close</button>
   </div>
 
   <div id="chatBody"></div>
 
-  <!-- Sticky actions at bottom -->
   <div id="chatActions">
     <div id="quickChips"></div>
     <div id="confirmWrap">
@@ -244,20 +279,13 @@ const USE_SUPABASE = false;
 /* Palette */
 const PALETTE = ['#3b82f6','#ef4444','#84cc16','#f59e0b','#a855f7','#14b8a6','#ec4899','#64748b'];
 
-/* API stub */
+/* Fake API */
 const api = (() => {
   if (!USE_SUPABASE) {
     return {
       listRidersAround: async ({ lat, lng }) => {
         const rnd = mulberry32(Math.floor(lat*1e4) ^ Math.floor(lng*1e4));
-        const statuses = [
-          {label:'Ready now'},
-          {label:'Twisties'},
-          {label:'Chill loop'},
-          {label:'Coffee'},
-          {label:'Fuel stop'},
-          {label:'Lunch'}
-        ];
+        const statuses = [{label:'Ready now'},{label:'Twisties'},{label:'Chill loop'},{label:'Coffee'},{label:'Fuel stop'},{label:'Lunch'}];
         const bikes = ['ZX6R','MT-09','R7','GSX-S750','Panigale V2','CBR650R','Tiger 900','T7','Z900'];
         return Array.from({length:10}).map((_,i)=>({
           id:'r'+i,
@@ -287,12 +315,13 @@ const state = {
   anchor: null,
   meMarker: null,
   meHalo: null,
-  riderAnchors: new Map(),  // popup anchors
-  riderIcons: new Map(),    // visible helmet markers
+  riderAnchors: new Map(),
+  riderIcons: new Map(),
   pickingPin: false,
   currentMeetRider: null,
   meetDraft: { title:"", when:"in30", lat:null, lng:null },
-  meetups: []
+  meetups: [],
+  threads: []
 };
 
 /* Utils */
@@ -303,6 +332,7 @@ function metersToDegLat(m){ return m/111320; }
 function metersToDegLng(m, lat){ return m/(111320*Math.cos(lat * Math.PI/180) || 1); }
 function roundApprox(lat,lng){ const dLat = metersToDegLat(500); const dLng = metersToDegLng(500, lat); const rLat = Math.round(lat/dLat)*dLat; const rLng = Math.round(lng/dLng)*dLng; return [ +rLat.toFixed(6), +rLng.toFixed(6) ]; }
 function mulberry32(a){ return function(){ let t=a+=0x6D2B79F5; t=Math.imul(t^t>>>15,t|1); t^=t+Math.imul(t^t>>>7,t|61); return ((t^t>>>14)>>>0)/4294967296; } }
+function now(){ return Date.now(); }
 
 /* Map */
 function initMap(){
@@ -311,73 +341,71 @@ function initMap(){
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution:'&copy; OpenStreetMap' }).addTo(state.map);
 }
 
-/* Helmet SVG icon for riders */
-function helmetIcon(color){
+/* Helmet icon */
+function helmetDivIcon(color){
   const svg = `
-  <svg xmlns="http://www.w3.org/2000/svg" width="26" height="26" viewBox="0 0 26 26">
+  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 28 28" aria-hidden="true">
     <g>
-      <path d="M4 13a9 9 0 1 1 18 0v3a2 2 0 0 1-2 2h-5a1 1 0 0 1-1-1v-2h-2v2a1 1 0 0 1-1 1H6a2 2 0 0 1-2-2z"
-        fill="${color}" stroke="#111" stroke-width="2"/>
-      <path d="M14 8h6a1 1 0 0 1 .9 1.44l-1.5 3A1 1 0 0 1 18.5 13H14z" fill="#ffffff"/>
-      <circle cx="9" cy="10" r="1.3" fill="#0b0c10"/>
-      <path d="M3.7 13.5h18.6" stroke="#fff" stroke-width="1" opacity=".25"/>
+      <path d="M6 14c0-5.523 4.477-10 10-10 3.866 0 7 3.134 7 7v5a2 2 0 0 1-2 2h-6a1 1 0 0 1-1-1v-2h-2v2a1 1 0 0 1-1 1H8a2 2 0 0 1-2-2v-2z" fill="${color}" stroke="#111" stroke-width="2" />
+      <path d="M15 9h7a1 1 0 0 1 .92 1.39l-1.6 3.2A1 1 0 0 1 20.4 14H15z" fill="#fff"/>
+      <path d="M6 14h18" stroke="#fff" stroke-width="1" opacity=".25"/>
+      <path d="M12.5 6.8c1.9-.9 3.7-1.1 5.7-.7" stroke="#0b0c10" stroke-width="1" opacity=".25"/>
     </g>
   </svg>`;
-  return L.icon({ iconUrl: 'data:image/svg+xml;utf8,'+encodeURIComponent(svg), iconSize:[26,26], iconAnchor:[13,22] });
+  return L.divIcon({
+    className:'helm',
+    html:`<div class="helmWrap">${svg}</div>`,
+    iconSize:[24,24],
+    iconAnchor:[12,12]
+  });
 }
 
-/* Blue "Me" dot with subtle pulse */
+/* Blue "Me" dot */
 function drawMeAt(latlng){
   const me = L.circleMarker(latlng, { radius:7, color:'#60a5fa', weight:3, fillColor:'#60a5fa', fillOpacity:0.85, zIndexOffset: 500 }).addTo(state.map);
   me.bindTooltip('Me', { permanent:false, direction:'top', offset:[0,-12], opacity:1 });
-
   const halo = L.circleMarker(latlng, { radius:12, color:'#60a5fa', weight:2, fillColor:'#60a5fa', fillOpacity:0.12 }).addTo(state.map);
-
   if (state.meMarker) try { state.map.removeLayer(state.meMarker); } catch {}
   if (state.meHalo) try { state.map.removeLayer(state.meHalo); } catch {}
   state.meMarker = me;
   state.meHalo = halo;
 }
 
-/* Spotlight ring drawing */
+/* Spotlight */
 function showSpotAt(lat,lng, radiusPx=240){
   const c = document.getElementById('spot');
   const ctx = c.getContext('2d');
   c.width = window.innerWidth; c.height = window.innerHeight;
-  ctx.clearRect(0,0,c.width,c.height);
-  ctx.fillStyle = 'rgba(0,0,0,.55)';
-  ctx.fillRect(0,0,c.width,c.height);
 
-  const pt = state.map.latLngToContainerPoint([lat,lng]);
-  const grad = ctx.createRadialGradient(pt.x, pt.y, radiusPx*0.6, pt.x, pt.y, radiusPx);
-  grad.addColorStop(0, 'rgba(0,0,0,0)');
-  grad.addColorStop(1, 'rgba(0,0,0,.55)');
-  ctx.globalCompositeOperation = 'destination-out';
-  ctx.beginPath();
-  ctx.arc(pt.x, pt.y, radiusPx, 0, Math.PI*2);
-  ctx.fill();
-  ctx.globalCompositeOperation = 'destination-over';
-  ctx.fillStyle = 'rgba(0,0,0,.55)';
-  ctx.fillRect(0,0,c.width,c.height);
+  function draw(){
+    ctx.clearRect(0,0,c.width,c.height);
+    ctx.fillStyle = 'rgba(0,0,0,.6)';
+    ctx.fillRect(0,0,c.width,c.height);
+    const pt = state.map.latLngToContainerPoint([lat,lng]);
+    ctx.globalCompositeOperation = 'destination-out';
+    ctx.beginPath(); ctx.arc(pt.x, pt.y, radiusPx, 0, Math.PI*2); ctx.fill();
+    ctx.globalCompositeOperation = 'source-over';
+  }
+  draw();
   c.classList.add('show');
 
-  function follow(){
-    if (!c.classList.contains('show')) { window.removeEventListener('resize', onResize); state.map.off('move', follow); return; }
-    c.width = window.innerWidth; c.height = window.innerHeight;
-    ctx.clearRect(0,0,c.width,c.height);
-    ctx.fillStyle = 'rgba(0,0,0,.55)';
-    ctx.fillRect(0,0,c.width,c.height);
-    const pt2 = state.map.latLngToContainerPoint([lat,lng]);
-    ctx.globalCompositeOperation = 'destination-out';
-    ctx.beginPath(); ctx.arc(pt2.x, pt2.y, radiusPx, 0, Math.PI*2); ctx.fill();
-    ctx.globalCompositeOperation = 'destination-over';
-    ctx.fillStyle = 'rgba(0,0,0,.55)'; ctx.fillRect(0,0,c.width,c.height);
-  }
+  function follow(){ if (!c.classList.contains('show')) return; c.width = window.innerWidth; c.height = window.innerHeight; draw(); }
+  function onMapMove(){ follow(); }
   function onResize(){ follow(); }
-  state.map.on('move', follow);
+  function onEsc(e){ if (e.key === 'Escape') hideSpot(); }
+  function onMapClick(){ hideSpot(); }
+
+  state.map.on('move', onMapMove);
+  state.map.once('click', onMapClick);
   window.addEventListener('resize', onResize);
-  // store cleanup
-  c._cleanup = () => { c.classList.remove('show'); state.map.off('move', follow); window.removeEventListener('resize', onResize); };
+  window.addEventListener('keydown', onEsc);
+
+  c._cleanup = () => {
+    c.classList.remove('show');
+    state.map.off('move', onMapMove);
+    window.removeEventListener('resize', onResize);
+    window.removeEventListener('keydown', onEsc);
+  };
 }
 function hideSpot(){
   const c = document.getElementById('spot');
@@ -385,7 +413,7 @@ function hideSpot(){
   c.classList.remove('show');
 }
 
-/* Rider Card open/close and palette */
+/* Rider Card + palette */
 function buildPalette(sel){
   const wrap = document.getElementById('colorPalette');
   wrap.innerHTML = '';
@@ -434,7 +462,7 @@ function saveCard(){
   closeCard();
 }
 
-/* Apply location mode */
+/* Location modes */
 function applyLocationMode(firstRun=false){
   if (state.liveWatchId != null) { navigator.geolocation.clearWatch(state.liveWatchId); state.liveWatchId = null; }
   if (state.meMarker) { try { state.map.removeLayer(state.meMarker); } catch {} state.meMarker = null; }
@@ -460,7 +488,6 @@ function applyLocationMode(firstRun=false){
     return;
   }
 
-  // live
   if (!navigator.geolocation) {
     toast('GPS not available. Switch to Manual location.');
     state.locMode = 'pinned';
@@ -507,7 +534,7 @@ function drawRiders(riders){
       </div>`;
     anchorMarker.bindPopup(html);
 
-    const icon = helmetIcon(r.color || '#3b82f6');
+    const icon = helmetDivIcon(r.color || '#3b82f6');
     const marker = L.marker([r.lat, r.lng], { icon }).addTo(state.map);
 
     marker.on('click', () => {
@@ -536,15 +563,16 @@ function meetFlow(r, marker){
   // spotlight and zoom
   const targetZoom = Math.max(state.map.getZoom(), 15);
   state.map.flyTo([r.lat, r.lng], targetZoom, { duration: 0.6 });
+  hideSpot();
   showSpotAt(r.lat, r.lng, 240);
-  setTimeout(() => { /* auto hide after a bit */ hideSpot(); }, 2000);
 
-  // quick highlight: scale up marker briefly
-  const el = marker._icon;
+  // highlight: scale inner wrapper so it doesn't jump
+  const el = marker._icon?.querySelector('.helmWrap');
   if (el) {
     el.style.transition = 'transform .15s ease';
-    el.style.transform = 'translate(-50%,-50%) scale(1.4)';
-    setTimeout(()=>{ el.style.transform = 'translate(-50%,-50%) scale(1)'; }, 900);
+    el.style.transformOrigin = 'center center';
+    el.style.transform = 'scale(1.35)';
+    setTimeout(()=>{ el.style.transform = 'scale(1)'; }, 900);
   }
 
   // open chat
@@ -557,15 +585,21 @@ function meetFlow(r, marker){
   toggleConfirmBar(true);
 }
 
-/* Chat */
+/* Chat + threads */
 function openChat(rider){
-  const chat = document.getElementById('chat');
-  chat.classList.add('open');
+  persistThreadTouch(rider.id, rider.name);
+  renderThreads();
+  document.getElementById('chat').classList.add('open');
   document.getElementById('chatTitle').textContent = rider.name;
   document.getElementById('chatBody').innerHTML = '';
   addChatMsg(`Hey ${rider.name}, I am ${state.profile.name}.`, false);
-  document.getElementById('riderCardBtn').classList.add('shifted');
+  updateStackShift();
+}
+function closeChat(){
+  document.getElementById('chat').classList.remove('open');
   toggleConfirmBar(false);
+  hideSpot();
+  updateStackShift();
 }
 function addChatMsg(text, me=true){
   const div = document.createElement('div');
@@ -573,24 +607,97 @@ function addChatMsg(text, me=true){
   div.textContent = text;
   document.getElementById('chatBody').appendChild(div);
   document.getElementById('chatBody').scrollTop = 1e9;
-}
-function renderBottomChips(chips){
-  const wrap = document.getElementById('quickChips');
-  wrap.innerHTML = '';
-  chips.forEach(c => {
-    const b = document.createElement('button');
-    b.className = 'btn';
-    b.textContent = c.label;
-    b.onclick = () => addChatMsg(c.msg, true);
-    wrap.appendChild(b);
-  });
-}
-function toggleConfirmBar(show){
-  const bar = document.getElementById('confirmBar');
-  if (show) bar.classList.add('show'); else bar.classList.remove('show');
+  if (state.currentMeetRider && me) {
+    persistThreadMessage(state.currentMeetRider.id, state.currentMeetRider.name, text);
+    renderThreads();
+  }
 }
 
-/* Group Ride and Create Meet */
+/* Threads store */
+function loadThreads(){
+  try { state.threads = JSON.parse(localStorage.getItem('threads')||'[]'); } catch { state.threads=[]; }
+}
+function saveThreads(){
+  try { localStorage.setItem('threads', JSON.stringify(state.threads.slice(0,100))); } catch {}
+}
+function persistThreadTouch(id, name){
+  const t = state.threads.find(x=>x.id===id);
+  if (t){ t.ts = now(); } else { state.threads.unshift({ id, name, lastMsg:'', ts:now() }); }
+  state.threads.sort((a,b)=>b.ts - a.ts);
+  saveThreads();
+}
+function persistThreadMessage(id, name, msg){
+  let t = state.threads.find(x=>x.id===id);
+  if (!t){ t = { id, name, lastMsg:'', ts:now() }; state.threads.unshift(t); }
+  t.lastMsg = msg; t.ts = now();
+  state.threads.sort((a,b)=>b.ts - a.ts);
+  saveThreads();
+}
+function renderThreads(){
+  const list = document.getElementById('threadList');
+  list.innerHTML = '';
+  if (!state.threads.length){
+    const p = document.createElement('div');
+    p.className='hint';
+    p.style.padding='10px';
+    p.textContent = 'No chats yet';
+    list.appendChild(p);
+    return;
+  }
+  state.threads.forEach(t=>{
+    const div = document.createElement('div');
+    div.className='thread';
+    div.innerHTML = `<strong>${esc(t.name)}</strong><small>${t.lastMsg ? esc(t.lastMsg) : 'No messages yet'}</small>`;
+    div.onclick = () => {
+      const rider = { id:t.id, name:t.name };
+      state.currentMeetRider = rider;
+      openChat(rider);
+      document.getElementById('threads').classList.remove('open');
+      updateStackShift();
+    };
+    list.appendChild(div);
+  });
+}
+
+/* Explore list */
+function openExplore(){
+  renderExploreList();
+  document.getElementById('exploreSheet').style.display = 'flex';
+}
+function closeExplore(){ document.getElementById('exploreSheet').style.display = 'none'; }
+function renderExploreList(){
+  const list = document.getElementById('exploreList');
+  list.innerHTML = '';
+  if (!state.meetups.length) {
+    const p = document.createElement('div'); p.textContent = 'No meets yet. Create one below.'; p.className='hint';
+    list.appendChild(p); return;
+  }
+  const showPins = document.getElementById('exploreShowOnMap')?.checked;
+  state.meetups.forEach(m => {
+    const row = document.createElement('div');
+    row.style.display='flex'; row.style.justifyContent='space-between'; row.style.alignItems='center';
+    row.style.padding='10px 12px'; row.style.border='1px solid #1f2937'; row.style.borderRadius='10px'; row.style.margin='6px 0';
+    const left = document.createElement('div');
+    left.innerHTML = `<strong>${esc(m.title)}</strong><div class="hint">${esc(readableWhen(m.when))}</div>`;
+    const right = document.createElement('div');
+    const btn = document.createElement('button'); btn.className='btn'; btn.textContent='View';
+    btn.onclick = () => { state.map.flyTo([m.lat,m.lng], 15, {duration:.6}); closeExplore(); };
+    right.appendChild(btn);
+    row.appendChild(left); row.appendChild(right);
+    list.appendChild(row);
+
+    if (showPins && !m._pinShown) {
+      m._pinShown = true;
+      if (!m._pin) {
+        m._pin = L.marker([m.lat,m.lng]).addTo(state.map)
+          .bindTooltip('<span style="background:#111827;border:1px solid #374151;color:#e5e7eb;padding:2px 6px;border-radius:6px;font-size:11px;">Meet</span>', {permanent:true, direction:'top', offset:[0,-12]});
+      }
+    }
+    if (!showPins && m._pinShown) { m._pinShown = false; if (m._pin) try{ state.map.removeLayer(m._pin); m._pin = null; }catch{} }
+  });
+}
+
+/* Create Meet */
 function openCreateMeet(){
   state.meetDraft = { title:"", when:"in30", lat:null, lng:null };
   document.getElementById('meetTitle').value = '';
@@ -618,49 +725,27 @@ function saveMeet(){
   if (!(Number.isFinite(lat) && Number.isFinite(lng))) { toast('Pick a location'); return; }
   const m = { id: 'm'+Date.now(), title, when, lat, lng, createdAt: Date.now() };
   state.meetups.push(m);
-  // drop a meet marker with subtle label
   const pin = L.marker([lat,lng]).addTo(state.map)
     .bindTooltip('<span style="background:#111827;border:1px solid #374151;color:#e5e7eb;padding:2px 6px;border-radius:6px;font-size:11px;">Meet</span>', {permanent:true, direction:'top', offset:[0,-12]});
   m._pin = pin;
   closeCreateMeet();
   toast('Meet created');
-  renderGroupList();
+  renderExploreList();
 }
+
+/* Group Ride */
 function openGroup(){
-  renderGroupList();
+  document.getElementById('groupTitle').value = '';
   document.getElementById('groupSheet').style.display = 'flex';
 }
 function closeGroup(){ document.getElementById('groupSheet').style.display = 'none'; }
-function renderGroupList(){
-  const list = document.getElementById('groupList');
-  list.innerHTML = '';
-  if (!state.meetups.length) {
-    const p = document.createElement('div'); p.textContent = 'No meets yet. Create one from the dock.'; p.className='hint';
-    list.appendChild(p); return;
-  }
-  state.meetups.forEach(m => {
-    const row = document.createElement('div');
-    row.style.display='flex'; row.style.justifyContent='space-between'; row.style.alignItems='center';
-    row.style.padding='10px 12px'; row.style.border='1px solid #1f2937'; row.style.borderRadius='10px'; row.style.margin='6px 0';
-    const left = document.createElement('div');
-    left.innerHTML = `<strong>${esc(m.title)}</strong><div class="hint">${esc(readableWhen(m.when))}</div>`;
-    const right = document.createElement('div');
-    const btn = document.createElement('button'); btn.className='btn'; btn.textContent='View';
-    btn.onclick = () => { state.map.flyTo([m.lat,m.lng], 15, {duration:.6}); closeGroup(); };
-    right.appendChild(btn);
-    row.appendChild(left); row.appendChild(right);
-    list.appendChild(row);
-  });
-}
-function readableWhen(w){
-  if (w==='in30') return 'Starts in ~30 min';
-  if (w==='in60') return 'Starts in ~1 hour';
-  if (w==='tonight') return 'Tonight';
-  if (w==='tomorrow') return 'Tomorrow';
-  return 'Soon';
+function saveGroup(){
+  const title = document.getElementById('groupTitle').value.trim() || 'Group ride';
+  toast('Group ride created: ' + title);
+  closeGroup();
 }
 
-/* Manual location pick for Rider Card */
+/* Manual loc pick */
 function toggleLocOptions(){
   const mode = document.querySelector('input[name="locmode"]:checked')?.value;
   document.getElementById('liveOptions').style.display = mode === 'live' ? 'block' : 'none';
@@ -685,6 +770,19 @@ function startPickPin(){
   state.map.once('click', once);
 }
 
+/* Threads drawer UI */
+function openThreads(){ document.getElementById('threads').classList.add('open'); updateStackShift(); }
+function closeThreads(){ document.getElementById('threads').classList.remove('open'); updateStackShift(); }
+
+/* Shift top buttons when side drawers open */
+function updateStackShift(){
+  const stack = document.getElementById('stack');
+  const chatOpen = document.getElementById('chat').classList.contains('open');
+  const threadsOpen = document.getElementById('threads').classList.contains('open');
+  if (chatOpen || threadsOpen) stack.classList.add('shiftRight');
+  else stack.classList.remove('shiftRight');
+}
+
 /* Restore */
 function restore(){
   try {
@@ -692,6 +790,7 @@ function restore(){
     const m = localStorage.getItem('locMode'); if (m) state.locMode = m;
     const pr = localStorage.getItem('precision'); if (pr) state.precision = pr;
     const pin = JSON.parse(localStorage.getItem('pinned') || 'null'); if (pin && Number.isFinite(pin.lat) && Number.isFinite(pin.lng)) state.pinned = pin;
+    loadThreads();
   } catch {}
 }
 
@@ -700,12 +799,7 @@ document.getElementById('riderCardBtn').onclick = () => openCard();
 document.getElementById('closeCard').onclick = () => closeCard();
 document.getElementById('saveCard').onclick = () => saveCard();
 
-document.getElementById('chatClose').onclick = () => {
-  document.getElementById('chat').classList.remove('open');
-  document.getElementById('riderCardBtn').classList.remove('shifted');
-  hideSpot();
-  toggleConfirmBar(false);
-};
+document.getElementById('chatClose').onclick = closeChat;
 document.getElementById('chatSend').onclick = () => {
   const inp = document.getElementById('chatInput'); const v = inp.value.trim();
   if (!v) return; addChatMsg(v, true); api.sendMessage('temp', v); inp.value='';
@@ -720,15 +814,23 @@ document.getElementById('confirmCancel').onclick = () => toggleConfirmBar(false)
 document.querySelectorAll('input[name="locmode"]').forEach(r => r.onchange = toggleLocOptions);
 document.getElementById('pinPick').onclick  = () => startPickPin();
 
-/* Dock actions */
+/* Dock */
 document.getElementById('createMeetBtn').onclick = openCreateMeet;
 document.getElementById('closeCreate').onclick = closeCreateMeet;
 document.getElementById('meetPick').onclick = () => pickMeetLocation();
 document.getElementById('meetSave').onclick = () => saveMeet();
 
 document.getElementById('groupRideBtn').onclick = openGroup;
+document.getElementById('groupSave').onclick = saveGroup;
 document.getElementById('closeGroup').onclick = closeGroup;
-document.getElementById('groupCheckIn').onclick = () => { toast('Checked in: On my way'); };
+
+document.getElementById('exploreBtn').onclick = openExplore;
+document.getElementById('closeExplore').onclick = closeExplore;
+document.getElementById('exploreShowOnMap').onchange = renderExploreList;
+
+/* Threads drawer */
+document.getElementById('chatsBtn').onclick = openThreads;
+document.getElementById('threadsClose').onclick = closeThreads;
 
 /* Boot */
 initMap();
@@ -743,15 +845,28 @@ toggleLocOptions();
   try { document.getElementById('riderCardBtn'); log(true,'Rider Card button present'); } catch(e){ log(false,'Rider Card button present', e); }
 })();
 
-/* Helpers for riders */
-function openChat(rider){
-  const chat = document.getElementById('chat');
-  chat.classList.add('open');
-  document.getElementById('chatTitle').textContent = rider.name;
-  document.getElementById('chatBody').innerHTML = '';
-  addChatMsg(`Hey ${rider.name}, I am ${state.profile.name}.`, false);
-  document.getElementById('riderCardBtn').classList.add('shifted');
-  toggleConfirmBar(false);
+/* Helpers */
+function readableWhen(w){
+  if (w==='in30') return 'Starts in ~30 min';
+  if (w==='in60') return 'Starts in ~1 hour';
+  if (w==='tonight') return 'Tonight';
+  if (w==='tomorrow') return 'Tomorrow';
+  return 'Soon';
+}
+function renderBottomChips(chips){
+  const wrap = document.getElementById('quickChips');
+  wrap.innerHTML = '';
+  chips.forEach(c => {
+    const b = document.createElement('button');
+    b.className = 'btn';
+    b.textContent = c.label;
+    b.onclick = () => addChatMsg(c.msg, true);
+    wrap.appendChild(b);
+  });
+}
+function toggleConfirmBar(show){
+  const bar = document.getElementById('confirmBar');
+  if (show) bar.classList.add('show'); else bar.classList.remove('show');
 }
 </script>
 </body>
