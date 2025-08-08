@@ -21,6 +21,29 @@
   .dock .dockbtn { border:1px solid rgba(80,90,110,.7); background:rgba(35,40,50,.85); color:#fff; padding:10px 14px; border-radius:12px; cursor:pointer; font-weight:700; }
   .dock .dockbtn.primary { background:#22c55e; border-color:#22c55e; color:#072c16; }
 
+  /* Onboarding overlay centered */
+  #onboard {
+    position:fixed; inset:0; display:none; z-index:700; background:rgba(0,0,0,.55);
+  }
+  #onboardCenter {
+    position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); text-align:center;
+    background:#15171c; color:#e5e7eb; border:1px solid #1f2937;
+    padding:14px 18px; border-radius:14px; box-shadow:0 8px 30px rgba(0,0,0,.35);
+    max-width:min(90vw,520px);
+  }
+  #onboardTitle { font-weight:800; font-size:16px; }
+  #onboardSub { font-size:12px; color:#cbd5e1; margin-top:6px; }
+
+  /* Spotlight for Meet focus using CSS mask */
+  #spot {
+    position:fixed; inset:0; pointer-events:none; display:none; z-index:710;
+    background: rgba(0,0,0,.6);
+    --x: 50vw; --y: 50vh; --r: 240px;
+    -webkit-mask-image: radial-gradient(circle var(--r) at var(--x) var(--y), transparent 0, transparent 99%, black 100%);
+    mask-image: radial-gradient(circle var(--r) at var(--x) var(--y), transparent 0, transparent 99%, black 100%);
+  }
+  #spot.show { display:block; }
+
   /* Modals and cards */
   .modal { position:fixed; inset:0; display:flex; align-items:center; justify-content:center; background:rgba(0,0,0,.55); z-index:1000; }
   .card { width:min(640px, 94vw); background:#15171c; border:1px solid #1f2937; border-radius:14px; box-shadow:0 20px 60px rgba(0,0,0,.45); }
@@ -45,7 +68,8 @@
   /* Chat drawer */
   #chat { position:fixed; right:0; top:0; bottom:0; width:min(420px, 92vw); transform:translateX(100%); transition:transform .2s ease; background:#0e0e0e; color:#fff; z-index:800; display:flex; flex-direction:column; border-left:1px solid #222; }
   #chat.open { transform:translateX(0%); }
-  #chatHead { padding:10px 12px; border-bottom:1px solid #222; display:flex; align-items:center; justify-content:space-between; }
+  #chatHead { padding:10px 12px; border-bottom:1px solid #222; display:flex; align-items:center; justify-content:space-between; gap:8px; }
+  #chatHead .left { display:flex; align-items:center; gap:8px; }
   #chatBody { flex:1; overflow:auto; padding:12px; display:flex; flex-direction:column; gap:8px; }
   #chatActions { padding:8px 12px; border-top:1px solid #222; display:flex; flex-direction:column; gap:8px; }
   #quickChips { display:flex; gap:6px; flex-wrap:wrap; justify-content:flex-start; }
@@ -60,16 +84,15 @@
   /* Pick-on-map hint */
   .pickbar { position:fixed; top:8px; left:50%; transform:translateX(-50%); background:#15171c; border:1px solid #1f2937; color:#e5e7eb; padding:6px 10px; border-radius:999px; z-index:900; display:none; }
 
-  /* Spotlight */
-  #spot { position:fixed; inset:0; pointer-events:none; display:none; z-index:700; }
-
   /* Threads drawer */
-  #threads { position:fixed; right:0; top:0; bottom:0; width:min(320px, 88vw); transform:translateX(100%); transition:transform .2s ease; background:#101214; color:#e5e7eb; z-index:750; border-left:1px solid #222; display:flex; flex-direction:column; }
+  #threads { position:fixed; right:0; top:0; bottom:0; width:min(360px, 92vw); transform:translateX(100%); transition:transform .2s ease; background:#101214; color:#e5e7eb; z-index:750; border-left:1px solid #222; display:flex; flex-direction:column; }
   #threads.open { transform:translateX(0); }
   #threads header { padding:10px 12px; border-bottom:1px solid #222; display:flex; align-items:center; justify-content:space-between; font-weight:800; }
   #threadList { flex:1; overflow:auto; padding:10px; display:flex; flex-direction:column; gap:8px; }
-  .thread { border:1px solid #1f2937; border-radius:10px; padding:8px 10px; cursor:pointer; }
+  .thread { border:1px solid #1f2937; border-radius:10px; padding:8px 10px; display:flex; justify-content:space-between; align-items:center; gap:10px; }
+  .thread .meta { display:flex; flex-direction:column; }
   .thread small { color:#9ca3af; display:block; }
+  .thread .del { border:1px solid #3b2323; background:#2a1616; color:#fca5a5; padding:6px 10px; border-radius:8px; cursor:pointer; }
 
   /* Helmet divIcon content */
   .helm { transform: translate(-50%, -50%); }
@@ -79,8 +102,16 @@
 <body>
 <div id="map"></div>
 
-<!-- Spotlight canvas -->
-<canvas id="spot"></canvas>
+<!-- Onboarding overlay -->
+<div id="onboard">
+  <div id="onboardCenter">
+    <div id="onboardTitle">Tap a rider to meet up</div>
+    <div id="onboardSub">(click anywhere to start)</div>
+  </div>
+</div>
+
+<!-- Spotlight for meet focus -->
+<div id="spot"></div>
 
 <!-- Top right buttons -->
 <div class="stack" id="stack">
@@ -160,7 +191,7 @@
   </div>
 </div>
 
-<!-- Create Meet sheet -->
+<!-- Create Meet -->
 <div class="modal" id="createMeetModal" style="display:none;">
   <div class="card" style="width:min(520px,92vw)">
     <header>
@@ -195,7 +226,7 @@
   </div>
 </div>
 
-<!-- Group Ride sheet -->
+<!-- Group Ride -->
 <div class="modal" id="groupSheet" style="display:none;">
   <div class="card" style="width:min(520px,92vw)">
     <header>
@@ -214,7 +245,7 @@
   </div>
 </div>
 
-<!-- Explore sheet -->
+<!-- Explore -->
 <div class="modal" id="exploreSheet" style="display:none;">
   <div class="card" style="width:min(560px,94vw)">
     <header>
@@ -248,8 +279,13 @@
 <!-- Chat -->
 <div id="chat">
   <div id="chatHead">
-    <strong id="chatTitle"></strong>
-    <button id="chatClose" class="btn">Close</button>
+    <div class="left">
+      <strong id="chatTitle"></strong>
+    </div>
+    <div class="right">
+      <button id="chatDelete" class="btn">Delete</button>
+      <button id="chatClose" class="btn">Close</button>
+    </div>
   </div>
 
   <div id="chatBody"></div>
@@ -273,36 +309,28 @@
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
-/* Feature flags */
-const USE_SUPABASE = false;
-
 /* Palette */
 const PALETTE = ['#3b82f6','#ef4444','#84cc16','#f59e0b','#a855f7','#14b8a6','#ec4899','#64748b'];
 
 /* Fake API */
-const api = (() => {
-  if (!USE_SUPABASE) {
-    return {
-      listRidersAround: async ({ lat, lng }) => {
-        const rnd = mulberry32(Math.floor(lat*1e4) ^ Math.floor(lng*1e4));
-        const statuses = [{label:'Ready now'},{label:'Twisties'},{label:'Chill loop'},{label:'Coffee'},{label:'Fuel stop'},{label:'Lunch'}];
-        const bikes = ['ZX6R','MT-09','R7','GSX-S750','Panigale V2','CBR650R','Tiger 900','T7','Z900'];
-        return Array.from({length:10}).map((_,i)=>({
-          id:'r'+i,
-          name:'Rider '+(i+1),
-          lat: lat + (rnd()-0.5)*0.06,
-          lng: lng + (rnd()-0.5)*0.06,
-          status: statuses[Math.floor(rnd()*statuses.length)],
-          color: PALETTE[Math.floor(rnd()*PALETTE.length)],
-          bike: bikes[Math.floor(rnd()*bikes.length)]
-        }));
-      },
-      sendMessage: async (toId, body) => { console.log('[fake sendMessage]', { toId, body }); return { ok:true }; },
-      upsertPresence: async ({ lat, lng, precision }) => { console.log('[fake upsertPresence]', { lat, lng, precision }); return { ok:true }; }
-    };
-  }
-  return { listRidersAround: async()=>[], sendMessage: async()=>({ok:false}), upsertPresence: async()=>({ok:false}) };
-})();
+const api = {
+  listRidersAround: async ({ lat, lng }) => {
+    const rnd = mulberry32(Math.floor(lat*1e4) ^ Math.floor(lng*1e4));
+    const statuses = [{label:'Ready now'},{label:'Twisties'},{label:'Chill loop'},{label:'Coffee'},{label:'Fuel stop'},{label:'Lunch'}];
+    const bikes = ['ZX6R','MT-09','R7','GSX-S750','Panigale V2','CBR650R','Tiger 900','T7','Z900'];
+    return Array.from({length:10}).map((_,i)=>({
+      id:'r'+i,
+      name:'Rider '+(i+1),
+      lat: lat + (rnd()-0.5)*0.06,
+      lng: lng + (rnd()-0.5)*0.06,
+      status: statuses[Math.floor(rnd()*statuses.length)],
+      color: PALETTE[Math.floor(rnd()*PALETTE.length)],
+      bike: bikes[Math.floor(rnd()*bikes.length)]
+    }));
+  },
+  sendMessage: async (toId, body) => { console.log('[fake sendMessage]', { toId, body }); return { ok:true }; },
+  upsertPresence: async ({ lat, lng, precision }) => { console.log('[fake upsertPresence]', { lat, lng, precision }); return { ok:true }; }
+};
 
 /* State */
 const state = {
@@ -317,11 +345,11 @@ const state = {
   meHalo: null,
   riderAnchors: new Map(),
   riderIcons: new Map(),
-  pickingPin: false,
   currentMeetRider: null,
   meetDraft: { title:"", when:"in30", lat:null, lng:null },
   meetups: [],
-  threads: []
+  threads: [],
+  coachArmed: false
 };
 
 /* Utils */
@@ -341,15 +369,17 @@ function initMap(){
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution:'&copy; OpenStreetMap' }).addTo(state.map);
 }
 
-/* Helmet icon */
+/* Helmet icon v2 */
 function helmetDivIcon(color){
   const svg = `
-  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 28 28" aria-hidden="true">
+  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 32 32" aria-hidden="true">
     <g>
-      <path d="M6 14c0-5.523 4.477-10 10-10 3.866 0 7 3.134 7 7v5a2 2 0 0 1-2 2h-6a1 1 0 0 1-1-1v-2h-2v2a1 1 0 0 1-1 1H8a2 2 0 0 1-2-2v-2z" fill="${color}" stroke="#111" stroke-width="2" />
-      <path d="M15 9h7a1 1 0 0 1 .92 1.39l-1.6 3.2A1 1 0 0 1 20.4 14H15z" fill="#fff"/>
-      <path d="M6 14h18" stroke="#fff" stroke-width="1" opacity=".25"/>
-      <path d="M12.5 6.8c1.9-.9 3.7-1.1 5.7-.7" stroke="#0b0c10" stroke-width="1" opacity=".25"/>
+      <path d="M6 16a10 10 0 0 1 20 0v5a2 2 0 0 1-2 2h-8v-3h-4v3H8a2 2 0 0 1-2-2z"
+            fill="${color}" stroke="#0a0a0a" stroke-width="2" />
+      <path d="M17 11h9a1 1 0 0 1 .9 1.45l-2 4A1 1 0 0 1 23 17h-6z" fill="#fff"/>
+      <path d="M8 16h18" stroke="#fff" stroke-width="1" opacity=".22"/>
+      <circle cx="12" cy="12" r="1.2" fill="#0b0c10" opacity=".6"/>
+      <path d="M12 8c2-1 5-1.4 8-.8" stroke="#0b0c10" stroke-width="1" opacity=".25"/>
     </g>
   </svg>`;
   return L.divIcon({
@@ -371,46 +401,42 @@ function drawMeAt(latlng){
   state.meHalo = halo;
 }
 
-/* Spotlight */
+/* Spotlight using CSS mask */
 function showSpotAt(lat,lng, radiusPx=240){
-  const c = document.getElementById('spot');
-  const ctx = c.getContext('2d');
-  c.width = window.innerWidth; c.height = window.innerHeight;
+  const spot = document.getElementById('spot');
+  const pt = state.map.latLngToContainerPoint([lat,lng]);
+  spot.style.setProperty('--x', pt.x + 'px');
+  spot.style.setProperty('--y', pt.y + 'px');
+  spot.style.setProperty('--r', radiusPx + 'px');
+  spot.classList.add('show');
 
-  function draw(){
-    ctx.clearRect(0,0,c.width,c.height);
-    ctx.fillStyle = 'rgba(0,0,0,.6)';
-    ctx.fillRect(0,0,c.width,c.height);
-    const pt = state.map.latLngToContainerPoint([lat,lng]);
-    ctx.globalCompositeOperation = 'destination-out';
-    ctx.beginPath(); ctx.arc(pt.x, pt.y, radiusPx, 0, Math.PI*2); ctx.fill();
-    ctx.globalCompositeOperation = 'source-over';
+  function follow(){
+    if (!spot.classList.contains('show')) return;
+    const p2 = state.map.latLngToContainerPoint([lat,lng]);
+    spot.style.setProperty('--x', p2.x + 'px');
+    spot.style.setProperty('--y', p2.y + 'px');
   }
-  draw();
-  c.classList.add('show');
-
-  function follow(){ if (!c.classList.contains('show')) return; c.width = window.innerWidth; c.height = window.innerHeight; draw(); }
   function onMapMove(){ follow(); }
   function onResize(){ follow(); }
   function onEsc(e){ if (e.key === 'Escape') hideSpot(); }
   function onMapClick(){ hideSpot(); }
 
   state.map.on('move', onMapMove);
-  state.map.once('click', onMapClick);
   window.addEventListener('resize', onResize);
   window.addEventListener('keydown', onEsc);
+  state.map.once('click', onMapClick);
 
-  c._cleanup = () => {
-    c.classList.remove('show');
+  spot._cleanup = () => {
+    spot.classList.remove('show');
     state.map.off('move', onMapMove);
     window.removeEventListener('resize', onResize);
     window.removeEventListener('keydown', onEsc);
   };
 }
 function hideSpot(){
-  const c = document.getElementById('spot');
-  if (c._cleanup) c._cleanup();
-  c.classList.remove('show');
+  const spot = document.getElementById('spot');
+  if (spot._cleanup) spot._cleanup();
+  spot.classList.remove('show');
 }
 
 /* Rider Card + palette */
@@ -444,6 +470,7 @@ function openCard(prefillOnly=false){
 }
 function closeCard(){
   document.getElementById('riderModal').style.display = 'none';
+  armOnboardOverlay();
   setTimeout(()=> state.map.invalidateSize(), 50);
 }
 function saveCard(){
@@ -460,6 +487,24 @@ function saveCard(){
   } catch {}
   applyLocationMode(true);
   closeCard();
+}
+
+/* Onboarding overlay control */
+function armOnboardOverlay(){
+  const o = document.getElementById('onboard');
+  o.style.display = 'block';
+
+  const dismiss = () => { o.style.display = 'none'; cleanup(); };
+  const cleanup = () => {
+    o.removeEventListener('click', dismiss);
+    window.removeEventListener('keydown', anyKey);
+    state.map.off('click', dismiss);
+  };
+  const anyKey = () => dismiss();
+
+  o.addEventListener('click', dismiss);
+  window.addEventListener('keydown', anyKey);
+  state.map.once('click', dismiss);
 }
 
 /* Location modes */
@@ -559,14 +604,11 @@ function clearRiders(){
 /* Meet flow */
 function meetFlow(r, marker){
   state.currentMeetRider = r;
-
-  // spotlight and zoom
   const targetZoom = Math.max(state.map.getZoom(), 15);
   state.map.flyTo([r.lat, r.lng], targetZoom, { duration: 0.6 });
   hideSpot();
   showSpotAt(r.lat, r.lng, 240);
 
-  // highlight: scale inner wrapper so it doesn't jump
   const el = marker._icon?.querySelector('.helmWrap');
   if (el) {
     el.style.transition = 'transform .15s ease';
@@ -575,7 +617,6 @@ function meetFlow(r, marker){
     setTimeout(()=>{ el.style.transform = 'scale(1)'; }, 900);
   }
 
-  // open chat
   openChat(r);
   renderBottomChips([
     {label:'Coffee in 15', msg:'Coffee in 15 near you?'},
@@ -613,6 +654,20 @@ function addChatMsg(text, me=true){
   }
 }
 
+/* Delete chat helpers */
+function deleteThreadById(id){
+  const idx = state.threads.findIndex(t=>t.id===id);
+  if (idx !== -1) { state.threads.splice(idx,1); saveThreads(); }
+}
+function deleteCurrentChat(){
+  if (!state.currentMeetRider) return;
+  const id = state.currentMeetRider.id;
+  deleteThreadById(id);
+  closeChat();
+  renderThreads();
+  toast('Chat deleted');
+}
+
 /* Threads store */
 function loadThreads(){
   try { state.threads = JSON.parse(localStorage.getItem('threads')||'[]'); } catch { state.threads=[]; }
@@ -647,7 +702,18 @@ function renderThreads(){
   state.threads.forEach(t=>{
     const div = document.createElement('div');
     div.className='thread';
-    div.innerHTML = `<strong>${esc(t.name)}</strong><small>${t.lastMsg ? esc(t.lastMsg) : 'No messages yet'}</small>`;
+    const meta = document.createElement('div');
+    meta.className='meta';
+    meta.innerHTML = `<strong>${esc(t.name)}</strong><small>${t.lastMsg ? esc(t.lastMsg) : 'No messages yet'}</small>`;
+    const del = document.createElement('button');
+    del.className='del';
+    del.textContent='Delete';
+    del.onclick = (e) => {
+      e.stopPropagation();
+      deleteThreadById(t.id);
+      renderThreads();
+      toast('Chat deleted');
+    };
     div.onclick = () => {
       const rider = { id:t.id, name:t.name };
       state.currentMeetRider = rider;
@@ -655,11 +721,13 @@ function renderThreads(){
       document.getElementById('threads').classList.remove('open');
       updateStackShift();
     };
+    div.appendChild(meta);
+    div.appendChild(del);
     list.appendChild(div);
   });
 }
 
-/* Explore list */
+/* Explore */
 function openExplore(){
   renderExploreList();
   document.getElementById('exploreSheet').style.display = 'flex';
@@ -733,18 +801,6 @@ function saveMeet(){
   renderExploreList();
 }
 
-/* Group Ride */
-function openGroup(){
-  document.getElementById('groupTitle').value = '';
-  document.getElementById('groupSheet').style.display = 'flex';
-}
-function closeGroup(){ document.getElementById('groupSheet').style.display = 'none'; }
-function saveGroup(){
-  const title = document.getElementById('groupTitle').value.trim() || 'Group ride';
-  toast('Group ride created: ' + title);
-  closeGroup();
-}
-
 /* Manual loc pick */
 function toggleLocOptions(){
   const mode = document.querySelector('input[name="locmode"]:checked')?.value;
@@ -754,11 +810,8 @@ function toggleLocOptions(){
 function startPickPin(){
   document.getElementById('riderModal').style.display = 'none';
   showPickbar(true);
-  state.pickingPin = true;
 
   const once = e => {
-    if (!state.pickingPin) return;
-    state.pickingPin = false;
     showPickbar(false);
     state.pinned = { lat:e.latlng.lat, lng:e.latlng.lng };
     try { localStorage.setItem('pinned', JSON.stringify(state.pinned)); } catch {}
@@ -770,11 +823,9 @@ function startPickPin(){
   state.map.once('click', once);
 }
 
-/* Threads drawer UI */
+/* Threads drawer UI and top buttons shift */
 function openThreads(){ document.getElementById('threads').classList.add('open'); updateStackShift(); }
 function closeThreads(){ document.getElementById('threads').classList.remove('open'); updateStackShift(); }
-
-/* Shift top buttons when side drawers open */
 function updateStackShift(){
   const stack = document.getElementById('stack');
   const chatOpen = document.getElementById('chat').classList.contains('open');
@@ -800,6 +851,7 @@ document.getElementById('closeCard').onclick = () => closeCard();
 document.getElementById('saveCard').onclick = () => saveCard();
 
 document.getElementById('chatClose').onclick = closeChat;
+document.getElementById('chatDelete').onclick = deleteCurrentChat;
 document.getElementById('chatSend').onclick = () => {
   const inp = document.getElementById('chatInput'); const v = inp.value.trim();
   if (!v) return; addChatMsg(v, true); api.sendMessage('temp', v); inp.value='';
@@ -820,9 +872,9 @@ document.getElementById('closeCreate').onclick = closeCreateMeet;
 document.getElementById('meetPick').onclick = () => pickMeetLocation();
 document.getElementById('meetSave').onclick = () => saveMeet();
 
-document.getElementById('groupRideBtn').onclick = openGroup;
-document.getElementById('groupSave').onclick = saveGroup;
-document.getElementById('closeGroup').onclick = closeGroup;
+document.getElementById('groupRideBtn').onclick = () => { document.getElementById('groupSheet').style.display='flex'; };
+document.getElementById('closeGroup').onclick = () => { document.getElementById('groupSheet').style.display='none'; };
+document.getElementById('groupSave').onclick = () => { const t=document.getElementById('groupTitle').value.trim()||'Group ride'; toast('Group ride created: '+t); document.getElementById('groupSheet').style.display='none'; };
 
 document.getElementById('exploreBtn').onclick = openExplore;
 document.getElementById('closeExplore').onclick = closeExplore;
@@ -868,6 +920,11 @@ function toggleConfirmBar(show){
   const bar = document.getElementById('confirmBar');
   if (show) bar.classList.add('show'); else bar.classList.remove('show');
 }
+
+/* Threads load/save used above */
+function loadThreads(){ try { state.threads = JSON.parse(localStorage.getItem('threads')||'[]'); } catch { state.threads=[]; } }
+function saveThreads(){ try { localStorage.setItem('threads', JSON.stringify(state.threads.slice(0,100))); } catch {} }
+
 </script>
 </body>
 </html>
